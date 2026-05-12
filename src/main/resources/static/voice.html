@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎤 किसान साथी - वॉइस इंजन</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    body { background: linear-gradient(135deg, #f1f8e9, #e8f5e9); font-family: 'Poppins', sans-serif; }
+    .header { background: #1b5e20; color: white; padding: 1rem; text-align: center; }
+    .mic-button {
+      width: 160px; height: 160px; font-size: 4.5rem; border-radius: 50%;
+      background: #d32f2f; color: white; border: none; box-shadow: 0 10px 40px rgba(211,47,47,0.6);
+    }
+    .mic-button.listening { animation: pulse 1.2s infinite; background: #c62828; }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+    .chat-container { height: 55vh; overflow-y: auto; background: rgba(255,255,255,0.95); border-radius: 20px; padding: 20px; }
+    .chat-bubble { max-width: 80%; padding: 14px 20px; border-radius: 20px; margin-bottom: 15px; }
+    .user-bubble { background: #2e7d32; color: white; margin-left: auto; }
+    .bot-bubble { background: white; border: 1px solid #43a047; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>🌾 किसान साथी वॉइस इंजन</h2>
+    <p>एक आवाज • सारी फीचर्स</p>
+  </div>
+
+  <div class="container mt-4">
+    <div class="text-center mb-3">
+      <span class="badge bg-success fs-5" id="status">🟢 Online</span>
+    </div>
+
+    <div class="text-center mb-4">
+      <button id="micBtn" class="mic-button">🎤</button>
+      <p class="mt-3 fw-bold fs-5" id="micText">माइक दबाकर बोलें</p>
+    </div>
+
+    <div id="chatContainer" class="chat-container"></div>
+  </div>
+
+  <script>
+    // ================== ALL IN ONE VOICE ENGINE ==================
+
+    let recognition = null;
+    let isListening = false;
+    let currentVoiceMessage = "";
+
+    function addMessage(text, type) {
+      const container = document.getElementById('chatContainer');
+      const div = document.createElement('div');
+      div.className = `d-flex ${type === 'user' ? 'justify-content-end' : 'justify-content-start'}`;
+      div.innerHTML = `<div class="chat-bubble ${type === 'user' ? 'user-bubble' : 'bot-bubble'}">${text}</div>`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function showLoading() {
+      const container = document.getElementById('chatContainer');
+      const id = 'loading-' + Date.now();
+      container.innerHTML += `<div id="${id}" class="d-flex justify-content-start"><div class="chat-bubble bot-bubble"><i class="fas fa-spinner fa-spin"></i> सोच रहा हूँ...</div></div>`;
+      container.scrollTop = container.scrollHeight;
+      return id;
+    }
+
+    function removeLoading(id) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    }
+
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'hi-IN';
+        utterance.rate = 0.92;
+        speechSynthesis.speak(utterance);
+      }
+    }
+
+    function navigateTo(page) {
+      setTimeout(() => { window.location.href = page; }, 1200);
+    }
+
+    async function processCommand(transcript) {
+      const loadingId = showLoading();
+      const lowerText = transcript.toLowerCase();
+
+      try {
+        let reply = "समझ गया भाई!";
+
+        if (lowerText.includes("दाग") || lowerText.includes("बीमारी") || lowerText.includes("रोग") || 
+            lowerText.includes("फंगस") || lowerText.includes("पीला") || lowerText.includes("कीड़ा")) {
+          
+          reply = "समझ गया! फसल में दाग/बीमारी की जाँच कर रहा हूँ...";
+          addMessage(reply, 'bot');
+          speak(reply);
+          removeLoading(loadingId);
+          window.location.href = "crop-health.html?auto=true&disease=daag";
+          return;
+        } 
+        else if (lowerText.includes("मौसम") || lowerText.includes("बारिश") || lowerText.includes("तापमान")) {
+          reply = "आपके इलाके में मौसम ठीक है। बारिश की कोई संभावना नहीं।";
+        } 
+        else if (lowerText.includes("बोना") || lowerText.includes("बीज") || lowerText.includes("बुआई")) {
+          reply = "गेहूं बोने का अच्छा समय नवंबर का पहला सप्ताह है।";
+          navigateTo("sowing.html");
+        } 
+        else if (lowerText.includes("मुनाफा") || lowerText.includes("कमाई")) {
+          reply = "2 एकड़ में औसतन 22,000 रुपये मुनाफा हो सकता है।";
+          navigateTo("profit.html");
+        }
+
+        addMessage(reply, 'bot');
+        speak(reply);
+
+      } catch (e) {
+        console.error(e);
+        const fallback = "कुछ समस्या आई है। फिर से बोलिए।";
+        addMessage(fallback, 'bot');
+        speak(fallback);
+      }
+
+      removeLoading(loadingId);
+    }
+
+    // Speech Recognition
+    function initRecognition() {
+      if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+        alert("आपका ब्राउज़र स्पीच सपोर्ट नहीं करता। Chrome इस्तेमाल करें।");
+        return;
+      }
+      recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'hi-IN';
+      recognition.interimResults = false;
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript.trim();
+        addMessage(transcript, 'user');
+        processCommand(transcript);
+      };
+
+      recognition.onerror = () => {
+        addMessage("माइक में समस्या आई। फिर से ट्राई करें।", 'bot');
+        resetMic();
+      };
+
+      recognition.onend = resetMic;
+    }
+
+    function resetMic() {
+      isListening = false;
+      const btn = document.getElementById('micBtn');
+      btn.classList.remove('listening');
+      btn.innerHTML = '🎤';
+      document.getElementById('micText').textContent = "माइक दबाकर बोलें";
+    }
+
+    // Mic Button
+    document.getElementById('micBtn').addEventListener('click', () => {
+      if (!recognition) initRecognition();
+
+      if (!isListening) {
+        recognition.start();
+        isListening = true;
+        const btn = document.getElementById('micBtn');
+        btn.classList.add('listening');
+        btn.innerHTML = '🔴';
+        document.getElementById('micText').textContent = "सुन रहा हूँ...";
+      }
+    });
+
+    // Welcome Message
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const welcome = "नमस्ते! बोलिए — फसल में दाग है, मौसम कैसा है, बोआई कब करूँ, मुनाफा कितना होगा...";
+        addMessage(welcome, 'bot');
+        speak(welcome);
+      }, 800);
+    });
+  </script>
+</body>
+</html>

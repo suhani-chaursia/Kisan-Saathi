@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kisan Saathi - Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ===== BASE VARIABLES (translator.css merged) ===== */
+    :root {
+      --primary-green: #1b5e20;
+      --light-green: #4caf50;
+      --dark-green: #1b5e20;
+      --medium-green: #2e7d32;
+      --gold: #f9a825;
+    }
+    * { font-family: 'Poppins', sans-serif; }
+    body {
+      background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+      min-height: 100vh;
+      padding-bottom: 80px;
+      box-sizing: border-box;
+    }
+    .header {
+      background: linear-gradient(135deg, #1b5e20, #2e7d32);
+      color: white;
+      padding: 1rem 20px;
+      border-radius: 0 0 25px 25px;
+    }
+    .summary-card { background: white; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+    .profit-card { background: linear-gradient(135deg, #2e7d32, #43a047); color: white; border-radius: 18px; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; box-shadow: 0 -4px 15px rgba(0,0,0,0.1); z-index: 1000; }
+    .quick-action { background: white; border-radius: 16px; padding: 18px 12px; text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,0.08); transition: all 0.3s; }
+    .quick-action:hover { transform: translateY(-5px); }
+
+    /* ===== translator.css — lang toggle button ===== */
+    .lang-toggle {
+      background: white;
+      color: var(--dark-green);
+      border: 3px solid var(--gold);
+      border-radius: 50px;
+      padding: 2px 14px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .lang-toggle:hover {
+      background: var(--gold);
+      color: white;
+      transform: scale(1.05);
+    }
+
+    /* ===== translator.css — quick-action cards (original white style) ===== */
+    .gradient-card {
+      background: white;
+      color: #333;
+      border-radius: 16px;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 18px 12px;
+      text-align: center;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      transition: all 0.3s;
+      text-decoration: none;
+    }
+    .gradient-card:hover { transform: translateY(-5px); color: #333; }
+    .gradient-card i { font-size: 2.5rem; margin-bottom: 8px; }
+    .gradient-card strong { font-size: 1rem; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-3">
+        <img src="images/kisanlogo2.webp" alt="Logo" width="55" height="55" style="border-radius:50%;">
+        <div>
+          <h5 class="mb-0 fw-bold">Kisan Saathi</h5>
+          <small>AI Powered Farming Assistant</small>
+        </div>
+      </div>
+      <div>
+        <button id="lang-btn" onclick="toggleLanguage()" class="lang-toggle me-2">हिंदी</button>
+        <button id="statusBtn" class="btn btn-success btn-sm">🟢 Online</button>
+      </div>
+    </div>
+    <div class="mt-3">
+      <h4 class="greeting mb-1" id="greeting">नमस्ते, राम प्रसाद जी 👋</h4>
+      <p class="mb-0 opacity-90" id="date-location">लोड हो रहा है...</p>
+    </div>
+  </div>
+
+  <div class="container mt-4 pb-5 mb-4">
+    <h5 class="fw-semibold text-success mb-3" id="summary-title">आज का सारांश</h5>
+    <div class="row g-3 mb-5">
+      <div class="col-4">
+        <div class="summary-card p-3 text-center">
+          <i class="fas fa-sun fa-2x text-warning mb-2"></i>
+          <h4 class="fw-bold mb-1" id="temp">--°C</h4>
+          <small class="text-muted" id="weather-desc">लोड हो रहा है...</small>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="summary-card p-3 text-center">
+          <i class="fas fa-cloud-rain fa-2x text-info mb-2"></i>
+          <h5 class="fw-bold text-success mb-1" id="rain-info">--</h5>
+          <small class="text-muted" id="rain-sub">अगले 3 दिन</small>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="summary-card p-3 text-center">
+          <i class="fas fa-shield-alt fa-2x text-success mb-2"></i>
+          <h5 class="fw-bold mb-1" id="risk-level">--</h5>
+          <small class="text-muted" id="risk-sub">बीमारी का खतरा</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <h5 class="fw-semibold text-success mb-3" id="quick-title">त्वरित कार्रवाई</h5>
+    <div class="row g-3 mb-5">
+      <div class="col-6 col-sm-3">
+        <a href="sowing.html" class="gradient-card text-decoration-none d-flex">
+          <i class="fas fa-seedling fa-3x text-success"></i>
+          <strong id="sowing-text">बोआई निर्णय</strong>
+        </a>
+      </div>
+      <div class="col-6 col-sm-3">
+        <a href="crop-health.html" class="gradient-card text-decoration-none d-flex">
+          <i class="fas fa-leaf fa-3x text-success"></i>
+          <strong id="crop-text">फसल स्वास्थ्य</strong>
+        </a>
+      </div>
+      <div class="col-6 col-sm-3">
+        <a href="weather.html" class="gradient-card text-decoration-none d-flex">
+          <i class="fas fa-cloud-sun-rain fa-3x text-info"></i>
+          <strong id="weather-text">मौसम अलर्ट</strong>
+        </a>
+      </div>
+      <div class="col-6 col-sm-3">
+        <a href="profit.html" class="gradient-card text-decoration-none d-flex">
+          <i class="fas fa-store fa-3x text-warning"></i>
+          <strong id="profit-text">मंडी भाव</strong>
+        </a>
+      </div>
+    </div>
+
+    <!-- Voice Assistant -->
+    <div class="p-4 mb-4 text-center bg-white rounded-4 shadow-sm">
+      <i class="fas fa-microphone fa-3x text-success mb-3"></i>
+      <h5 class="fw-bold" id="voice-title">किसान साथी से पूछें</h5>
+      <p class="text-muted" id="voice-sub">आप अपनी भाषा में बोलकर पूछ सकते हैं</p>
+      <a href="voice.html" class="btn btn-success rounded-pill px-5 py-2">
+        <i class="fas fa-microphone me-2"></i> <span id="voice-btn-text">अब बोलें</span>
+      </a>
+    </div>
+
+    <!-- Profit Overview -->
+    <div class="profit-card p-4 mb-4">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <small class="opacity-75" id="profit-label">इस सीजन में अनुमानित शुद्ध मुनाफा</small>
+          <h2 class="fw-bold mb-0" id="expectedProfit">₹--</h2>
+        </div>
+        <div class="text-end">
+          <span class="badge bg-light text-success fs-6" id="profitBadge">+18%</span>
+          <small class="d-block text-white-50" id="profit-compare">पिछले सीजन की तुलना में</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav py-3">
+    <div class="container">
+      <div class="row text-center">
+        <div class="col-3"><a href="#" class="text-success"><i class="fas fa-home fa-2x"></i><small class="d-block fw-bold" id="nav-home">होम</small></a></div>
+        <div class="col-3"><a href="crop-health.html" class="text-muted"><i class="fas fa-leaf fa-2x"></i><small class="d-block" id="nav-crop">फसल स्वास्थ्य</small></a></div>
+        <div class="col-3"><a href="sowing.html" class="text-muted"><i class="fas fa-seedling fa-2x"></i><small class="d-block" id="nav-sowing">बोआई</small></a></div>
+        <div class="col-3"><a href="profit.html" class="text-muted"><i class="fas fa-store fa-2x"></i><small class="d-block" id="nav-profit">मुनाफा</small></a></div>
+      </div>
+    </div>
+  </nav>
+
+  <script>
+    // ==================== LOCATION STATE ====================
+    let LAT = null;
+    let LON = null;
+    let userCity = "📍 स्थान लोड हो रहा है...";
+
+    // ==================== WMO Weather Code → Hindi ====================
+    function getWeatherDesc(code) {
+      const map = {
+        0: "साफ आसमान ☀️", 1: "अधिकतर साफ 🌤", 2: "आंशिक बादल ⛅",
+        3: "बादल छाए हैं ☁️", 45: "कोहरा 🌫", 48: "जमा देने वाला कोहरा 🌫",
+        51: "हल्की बूंदाबांदी 🌦", 53: "मध्यम बूंदाबांदी 🌦", 55: "तेज बूंदाबांदी 🌧",
+        61: "हल्की बारिश 🌧", 63: "मध्यम बारिश 🌧", 65: "तेज बारिश 🌧",
+        71: "हल्की बर्फबारी 🌨", 73: "मध्यम बर्फबारी 🌨", 75: "तेज बर्फबारी ❄️",
+        80: "बौछारें 🌦", 81: "मध्यम बौछारें 🌦", 82: "तेज बौछारें ⛈",
+        95: "आंधी-तूफान ⛈", 96: "ओले के साथ तूफान 🌩", 99: "भारी ओले के साथ तूफान 🌩"
+      };
+      return map[code] || "मौसम जानकारी नहीं";
+    }
+
+    // ==================== RAIN SUMMARY (next 3 days) ====================
+    function getRainSummary(precipSums) {
+      // precipSums[0] = today, [1] = tomorrow, [2] = day after
+      const next3 = precipSums.slice(0, 3);
+      const total = next3.reduce((a, b) => a + (b || 0), 0);
+      const rounded = Math.round(total);
+
+      if (rounded === 0) return { text: "कोई बारिश नहीं", color: "text-success" };
+      if (rounded < 10)  return { text: `हल्की बारिश (~${rounded} mm)`, color: "text-info" };
+      if (rounded < 30)  return { text: `मध्यम बारिश (~${rounded} mm)`, color: "text-warning" };
+      return { text: `भारी बारिश (~${rounded} mm)`, color: "text-danger" };
+    }
+
+    // ==================== DISEASE RISK from humidity + rain ====================
+    function getDiseaseRisk(humidity, rain3days) {
+      // High humidity + rain = fungal disease risk rises
+      if (humidity >= 80 && rain3days >= 20) {
+        return { label: "उच्च जोखिम", color: "text-danger" };
+      } else if (humidity >= 65 || rain3days >= 10) {
+        return { label: "मध्यम जोखिम", color: "text-warning" };
+      } else {
+        return { label: "कम जोखिम", color: "text-success" };
+      }
+    }
+
+    // ==================== ESTIMATED PROFIT from weather ====================
+    // Base: ₹22,000. Adjust ±based on max temp and rain forecast
+    function estimateProfit(maxTemp, rain3days) {
+      let base = 22000;
+      // Heat stress reduces yield
+      if (maxTemp >= 40) base -= 4000;
+      else if (maxTemp >= 37) base -= 2000;
+      // Adequate rain boosts yield
+      if (rain3days >= 5 && rain3days <= 25) base += 2000;
+      else if (rain3days > 25) base -= 1500; // flooding risk
+      // Round to nearest 500
+      base = Math.round(base / 500) * 500;
+
+      // Calculate % change vs assumed last season base of ₹18,600
+      const lastSeason = 18600;
+      const pct = Math.round(((base - lastSeason) / lastSeason) * 100);
+      const sign = pct >= 0 ? "+" : "";
+      return { amount: base, badge: `${sign}${pct}%`, positive: pct >= 0 };
+    }
+
+    // ==================== DATE & GREETING (language-aware) ====================
+    function updateDateAndGreeting() {
+      const now = new Date();
+      const locale = currentLang === 'hi' ? 'hi-IN' : 'en-IN';
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const dateStr = now.toLocaleDateString(locale, options);
+
+      const hour = now.getHours();
+      const t = translations[currentLang];
+      let greetingPrefix = t['greeting-prefix-day'];
+      if (hour < 12) greetingPrefix = t['greeting-prefix-morning'];
+      else if (hour >= 17) greetingPrefix = t['greeting-prefix-evening'];
+
+      document.getElementById('greeting').innerHTML =
+        `${greetingPrefix}, ${t['greeting-suffix']}`;
+      document.getElementById('date-location').innerHTML =
+        `${dateStr} • ${userCity}`;
+    }
+
+    // ==================== STATUS ====================
+    function updateStatus() {
+      const btn = document.getElementById('statusBtn');
+      if (navigator.onLine) {
+        btn.className = "btn btn-success btn-sm";
+        btn.innerHTML = "🟢 Online";
+      } else {
+        btn.className = "btn btn-danger btn-sm";
+        btn.innerHTML = "🔴 Offline";
+      }
+    }
+
+    // ==================== CITY NAME via BigDataCloud ====================
+    // Uses GPS coordinates → Open-Meteo's /v1/search to find nearest city name
+    async function getCityFromCoords(lat, lon) {
+      try {
+        // Reverse geocode using Big Data Cloud (free, accurate, no API key)
+        const res = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=hi`
+        );
+        const data = await res.json();
+        // Returns: city, principalSubdivision (state)
+        const city  = data.city || data.locality || data.localityInfo?.administrative?.[3]?.name || "";
+        const state = data.principalSubdivision || "";
+        if (city && state) return `${city}, ${state}`;
+        if (city) return city;
+        return "📍 आपका स्थान";
+      } catch (e) {
+        return "📍 आपका स्थान";
+      }
+    }
+
+    // ==================== RENDER WEATHER DATA ====================
+    function renderWeather(d) {
+      document.getElementById('temp').textContent = d.temp + "°C";
+      document.getElementById('weather-desc').textContent = getWeatherDesc(d.weatherCode);
+
+      const rain = getRainSummary(d.precipSums || []);
+      const rainEl = document.getElementById('rain-info');
+      rainEl.textContent = rain.text;
+      rainEl.className   = `fw-bold mb-1 ${rain.color}`;
+
+      const risk = getDiseaseRisk(d.humidity, d.rain3days);
+      const riskEl = document.getElementById('risk-level');
+      riskEl.textContent = risk.label;
+      riskEl.className   = `fw-bold mb-1 ${risk.color}`;
+
+      const profit = estimateProfit(d.maxTemp, d.rain3days);
+      document.getElementById('expectedProfit').textContent = `₹${profit.amount.toLocaleString('hi-IN')}`;
+      const badgeEl = document.getElementById('profitBadge');
+      badgeEl.textContent = profit.badge;
+      badgeEl.className   = `badge bg-light fs-6 ${profit.positive ? 'text-success' : 'text-danger'}`;
+    }
+
+    // ==================== FETCH & RENDER WEATHER ====================
+    async function loadWeather() {
+      try {
+        const res = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
+          `&current=temperature_2m,relative_humidity_2m,weather_code` +
+          `&daily=temperature_2m_max,precipitation_sum` +
+          `&timezone=Asia/Kolkata&forecast_days=3`
+        );
+        const data = await res.json();
+
+        const temp        = Math.round(data.current.temperature_2m);
+        const humidity    = Math.round(data.current.relative_humidity_2m);
+        const weatherCode = data.current.weather_code;
+        const maxTemp     = Math.round(data.daily.temperature_2m_max[0]);
+        const precipSums  = data.daily.precipitation_sum;
+        const rain3days   = (precipSums || []).reduce((a, b) => a + (b || 0), 0);
+
+        const weatherObj = { temp, humidity, weatherCode, maxTemp, precipSums, rain3days };
+
+        // Save latest fetched data for offline use
+        localStorage.setItem('dashboardWeather', JSON.stringify(weatherObj));
+
+        renderWeather(weatherObj);
+
+      } catch (err) {
+        console.warn('Weather fetch failed — loading cached data:', err);
+        // Offline: show last saved data
+        const cached = localStorage.getItem('dashboardWeather');
+        if (cached) {
+          renderWeather(JSON.parse(cached));
+          // Show offline badge
+          document.getElementById('offline-weather-badge').style.display = 'block';
+        } else {
+          document.getElementById('temp').textContent         = "N/A";
+          document.getElementById('weather-desc').textContent = "उपलब्ध नहीं";
+          document.getElementById('rain-info').textContent    = "उपलब्ध नहीं";
+          document.getElementById('risk-level').textContent   = "उपलब्ध नहीं";
+          document.getElementById('expectedProfit').textContent = "₹--";
+        }
+      }
+    }
+
+    // ==================== TRANSLATOR (translator.js merged) ====================
+    let currentLang = 'hi';
+
+    const translations = {
+      hi: {
+        'lang-btn':       'हिंदी',
+        'summary-title':  'आज का सारांश',
+        'rain-sub':       'अगले 3 दिन',
+        'risk-sub':       'बीमारी का खतरा',
+        'quick-title':    'त्वरित कार्रवाई',
+        'sowing-text':    'बोआई निर्णय',
+        'crop-text':      'फसल स्वास्थ्य',
+        'weather-text':   'मौसम अलर्ट',
+        'profit-text':    'मंडी भाव',
+        'voice-title':    'किसान साथी से पूछें',
+        'voice-sub':      'आप अपनी भाषा में बोलकर पूछ सकते हैं',
+        'voice-btn-text': 'अब बोलें',
+        'profit-label':   'इस सीजन में अनुमानित शुद्ध मुनाफा',
+        'profit-compare': 'पिछले सीजन की तुलना में',
+        'nav-home':       'होम',
+        'nav-crop':       'फसल स्वास्थ्य',
+        'nav-sowing':     'बोआई',
+        'nav-profit':     'मुनाफा',
+        'greeting-prefix-morning': 'शुभ प्रभात',
+        'greeting-prefix-day':     'नमस्ते',
+        'greeting-prefix-evening': 'शुभ संध्या',
+        'greeting-suffix':         'राम प्रसाद जी 👋',
+      },
+      en: {
+        'lang-btn':       'ENGLISH',
+        'summary-title':  "Today's Summary",
+        'rain-sub':       'Next 3 days',
+        'risk-sub':       'Disease Risk',
+        'quick-title':    'Quick Actions',
+        'sowing-text':    'Sowing Decision',
+        'crop-text':      'Crop Health',
+        'weather-text':   'Weather Alert',
+        'profit-text':    'Market Price',
+        'voice-title':    'Ask Kisan Saathi',
+        'voice-sub':      'Speak in your language',
+        'voice-btn-text': 'Speak Now',
+        'profit-label':   'Estimated Net Profit This Season',
+        'profit-compare': 'Compared to last season',
+        'nav-home':       'Home',
+        'nav-crop':       'Crop Health',
+        'nav-sowing':     'Sowing',
+        'nav-profit':     'Profit',
+        'greeting-prefix-morning': 'Good Morning',
+        'greeting-prefix-day':     'Hello',
+        'greeting-prefix-evening': 'Good Evening',
+        'greeting-suffix':         'Ram Prasad Ji 👋',
+      }
+    };
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'hi' ? 'en' : 'hi';
+      applyTranslations();
+      // Re-render greeting with correct language
+      updateDateAndGreeting();
+      // Save preference
+      localStorage.setItem('kisanLang', currentLang);
+    }
+
+    function applyTranslations() {
+      const t = translations[currentLang];
+      Object.keys(t).forEach(id => {
+        if (id.startsWith('greeting-')) return; // handled by updateDateAndGreeting
+        const el = document.getElementById(id);
+        if (el) el.textContent = t[id];
+      });
+      // Update html lang attribute
+      document.documentElement.lang = currentLang === 'hi' ? 'hi' : 'en';
+    }
+
+    function loadLanguage() {
+      const saved = localStorage.getItem('kisanLang');
+      if (saved) { currentLang = saved; applyTranslations(); }
+    }
+
+    // ==================== INITIALIZE ====================
+    window.addEventListener('load', () => {
+      loadLanguage();       // ← translator.js: restore saved language
+      updateDateAndGreeting();
+      updateStatus();
+      setInterval(updateDateAndGreeting, 60000);
+      window.addEventListener('online',  updateStatus);
+      window.addEventListener('offline', updateStatus);
+
+      if (!navigator.geolocation) {
+        // No GPS support — use cached or show error
+        const cachedLoc = localStorage.getItem('userLocation');
+        if (cachedLoc) {
+          const loc = JSON.parse(cachedLoc);
+          LAT = loc.LAT; LON = loc.LON; userCity = loc.userCity;
+          updateDateAndGreeting();
+          loadWeather();
+        } else {
+          userCity = "GPS उपलब्ध नहीं";
+          updateDateAndGreeting();
+        }
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        // ✅ GPS SUCCESS
+        async (pos) => {
+          LAT = pos.coords.latitude;
+          LON = pos.coords.longitude;
+
+          // Get accurate city name using BigDataCloud (GPS-based, not IP-based)
+          userCity = await getCityFromCoords(LAT, LON);
+
+          // Save location for offline use
+          localStorage.setItem('userLocation', JSON.stringify({ LAT, LON, userCity }));
+
+          updateDateAndGreeting();
+          loadWeather();
+        },
+
+        // ❌ GPS DENIED/FAILED — use localStorage cache only
+        (err) => {
+          console.warn('GPS denied:', err.message);
+          const cachedLoc = localStorage.getItem('userLocation');
+          if (cachedLoc) {
+            const loc = JSON.parse(cachedLoc);
+            LAT = loc.LAT; LON = loc.LON; userCity = loc.userCity;
+            updateDateAndGreeting();
+            loadWeather();
+          } else {
+            // No cache, no GPS — show message, load no weather
+            userCity = "📍 स्थान अनुमति दें";
+            updateDateAndGreeting();
+          }
+        },
+        { timeout: 10000, maximumAge: 5 * 60 * 1000 } // accept 5-min old GPS fix
+      );
+    });
+  </script>
+  <!-- Offline Weather Badge -->
+  <div id="offline-weather-badge" class="position-fixed bottom-0 start-50 translate-middle-x bg-warning text-dark px-4 py-2 rounded-pill mb-5 shadow" style="display:none;">
+    🔴 ऑफलाइन — पिछला सहेजा मौसम डेटा
+  </div>
+
+</body>
+</html>

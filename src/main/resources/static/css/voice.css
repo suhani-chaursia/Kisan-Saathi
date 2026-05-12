@@ -1,0 +1,59 @@
+body {
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  font-family: 'Poppins', sans-serif;
+}
+
+.header {
+  background: #1b5e20;
+  color: white;
+  text-align: center;
+  padding: 20px;
+}
+
+.mic-button {
+  width: 140px;
+  height: 140px;
+  font-size: 4rem;
+  border-radius: 50%;
+  background: #d32f2f;
+  color: white;
+  border: none;
+  box-shadow: 0 10px 40px rgba(211, 47, 47, 0.5);
+}
+
+.mic-button.listening {
+  animation: pulse 1.2s infinite;
+  background: #c62828;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+.chat-container {
+  height: 55vh;
+  overflow-y: auto;
+  background: rgba(255,255,255,0.92);
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.chat-bubble {
+  max-width: 80%;
+  padding: 14px 20px;
+  border-radius: 20px;
+  margin-bottom: 15px;
+}
+
+.user-bubble {
+  background: #2e7d32;
+  color: white;
+  margin-left: auto;
+}
+
+.bot-bubble {
+  background: white;
+  border: 1px solid #43a047;
+}

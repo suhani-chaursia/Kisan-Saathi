@@ -1,0 +1,81 @@
+spring:
+  application:
+    name: kisan-saathi
+
+  # ==================== DATABASE ====================
+  datasource:
+    # Development (H2)
+    url: jdbc:h2:mem:kisansathi;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        trace: false
+        web-allow-others: false
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+
+  # ==================== CACHE ====================
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterAccess=60m
+
+  # ==================== SERVER ====================
+  server:
+    port: 8080
+    servlet:
+      context-path: /
+    compression:
+      enabled: true
+
+# ==================== CLAUDE AI ====================
+claude:
+  api-key: ${CLAUDE_API_KEY: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}
+  base-url: https://api.anthropic.com
+  model: claude-3-5-sonnet-20240620
+
+# ==================== OPEN-METEO (Weather) ====================
+open-meteo:
+  base-url: https://api.open-meteo.com
+
+# ==================== LOGGING ====================
+logging:
+  level:
+    com.kisansathi: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: DEBUG
+
+# ==================== PRODUCTION PROFILE ====================
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/kisansathi?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  cache:
+    caffeine:
+      spec: maximumSize=5000,expireAfterAccess=2h

@@ -1,0 +1,63 @@
+:root {
+      --dark-green: #1b5e20;
+      --medium-green: #2e7d32;
+      --light-green: #43a047;
+      --gold: #f9a825;
+    }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f1f8e9, #e8f5e9);
+      min-height: 100vh;
+      padding-bottom: 80px;
+      box-sizing: border-box;
+    }
+    .header {
+      background: var(--dark-green);
+      color: white;
+      padding: 1rem 1.2rem;
+      border-radius: 0 0 25px 25px;
+    }
+    .lang-toggle {
+      background: white;
+      color: var(--dark-green);
+      border: 3px solid var(--gold);
+      border-radius: 50px;
+      padding: 2px 35px;
+      margin-top:-10px;
+      margin-right:8vw;
+      font-weight: 700;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .lang-toggle:hover {
+      background: var(--gold);
+      color: white;
+      transform: scale(1.05);
+    }
+    .card {
+      border: none;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    .gradient-card {
+      background: linear-gradient(135deg, var(--medium-green), var(--light-green));
+      color: white;
+      min-height: 145px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.3s;
+    }
+    .gradient-card:hover {
+      transform: scale(1.06);
+    }
+    .gradient-card h3 {
+      font-size: 3.5rem;
+      margin-bottom: 10px;
+    }
+    .gradient-card strong {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }

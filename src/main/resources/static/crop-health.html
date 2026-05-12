@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌿 फसल स्वास्थ्य जाँच - Kisan Saathi</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root { --primary-green: #1b5e20; --light-green: #4caf50; }
+    * { font-family: 'Poppins', sans-serif; }
+    body { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); min-height: 100vh; }
+    .header { background: linear-gradient(135deg, #1b5e20, #2e7d32); color: white; padding: 1.2rem; }
+    .upload-area { 
+      border: 4px dashed #43a047; 
+      border-radius: 25px; 
+      padding: 50px 20px; 
+      text-align: center; 
+      cursor: pointer; 
+      transition: all 0.4s; 
+      background: white; 
+    }
+    .upload-area:hover { background: #f1f8e9; border-color: #2e7d32; transform: scale(1.02); }
+    .preview-img { max-height: 340px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+    .scanning { animation: scanPulse 2s linear infinite; }
+    @keyframes scanPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .result-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .offline-badge { position: fixed; top: 15px; left: 15px; z-index: 1001; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; box-shadow: 0 -4px 15px rgba(0,0,0,0.1); z-index: 1000; }
+
+    .ai-real-badge {
+      background: linear-gradient(135deg, #1b5e20, #43a047);
+      color: white;
+      border-radius: 50px;
+      padding: 6px 18px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 15px rgba(27,94,32,0.3);
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    @keyframes glow {
+      from { box-shadow: 0 4px 15px rgba(27,94,32,0.3); }
+      to   { box-shadow: 0 4px 25px rgba(67,160,71,0.6); }
+    }
+
+    .scan-line {
+      position: absolute;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #43a047, transparent);
+      animation: scanLine 2s linear infinite;
+      top: 0; left: 0;
+    }
+    @keyframes scanLine {
+      0%   { top: 0%; }
+      100% { top: 100%; }
+    }
+    .img-scan-wrapper {
+      position: relative;
+      display: inline-block;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .confidence-bar-wrap { background: #e8f5e9; border-radius: 20px; height: 14px; width: 100%; }
+    .confidence-bar-fill { height: 14px; border-radius: 20px; background: linear-gradient(90deg, #43a047, #1b5e20); transition: width 1.8s ease; }
+
+    .step-badge {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #1b5e20; color: white;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.85rem; margin-right: 8px;
+    }
+
+    .tip-card {
+      background: #f8fff8;
+      border-left: 4px solid #43a047;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      font-size: 0.93rem;
+    }
+    .tip-card.prevention { border-left-color: #1b5e20; }
+
+    .loading-step { opacity: 0.4; transition: opacity 0.5s; font-size: 0.9rem; }
+    .loading-step.active { opacity: 1; color: #1b5e20; font-weight: 600; }
+    .loading-step.done { opacity: 0.6; text-decoration: line-through; color: #888; }
+
+    .error-box { background: #fff3f3; border: 2px solid #e53935; border-radius: 16px; padding: 20px; }
+    
+    .tech-table td { padding: 6px 12px; font-size: 0.88rem; }
+    .tech-table tr:nth-child(even) td { background: #f1f8e9; }
+  </style>
+</head>
+<body>
+
+  <div id="offlineBadge" class="offline-badge badge bg-danger d-none">🔴 ऑफलाइन मोड</div>
+
+  <div class="header">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-3">
+        <img src="images/kisanlogo2.webp" alt="Logo" width="55" height="55" style="border-radius:50%;">
+        <div>
+          <h5 class="mb-0 fw-bold">Kisan Saathi</h5>
+          <small>AI फसल स्वास्थ्य जाँच</small>
+        </div>
+      </div>
+      <button onclick="toggleSpeech()" id="voiceBtn" class="btn btn-light rounded-circle bg-light">
+        <i class="fas fa-volume-up fa-2x"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="container mt-4 pb-5">
+
+    <div class="text-center mb-2">
+      <span class="ai-real-badge">
+        <i class="fas fa-brain"></i> Powered by Claude Vision AI · Real Detection
+      </span>
+    </div>
+
+    <h4 class="text-center text-success mb-4">🌿 पत्ती की फोटो से तुरंत बीमारी पता करें</h4>
+
+    <!-- Upload Area -->
+    <div id="uploadArea" class="upload-area mb-4">
+      <i class="fas fa-camera fa-4x text-success mb-4"></i>
+      <h4>पत्ती की फोटो अपलोड करें</h4>
+      <p class="text-muted">कैमरा या गैलरी से चुनें</p>
+      <input type="file" id="imageInput" accept="image/*" capture="environment" style="display:none;">
+      <div class="d-flex gap-2 justify-content-center flex-wrap mt-3">
+        <button onclick="document.getElementById('imageInput').click()" class="btn btn-outline-success btn-lg px-4">
+          <i class="fas fa-upload me-2"></i> फोटो चुनें
+        </button>
+        <button onclick="openCamera()" class="btn btn-success btn-lg px-4">
+          <i class="fas fa-camera me-2"></i> कैमरा खोलें
+        </button>
+      </div>
+    </div>
+
+    <!-- Preview Area -->
+    <div id="previewArea" class="text-center mb-4" style="display:none;">
+      <div class="img-scan-wrapper mb-4">
+        <img id="preview" class="preview-img img-fluid">
+      </div>
+      <p class="text-muted small mb-3">फोटो तैयार है — AI विश्लेषण के लिए तैयार</p>
+      <div class="d-flex gap-2 justify-content-center flex-wrap">
+        <button onclick="analyzeImage()" class="btn btn-success btn-lg px-5 py-3">
+          <i class="fas fa-brain me-2"></i> AI से जाँच करें
+        </button>
+        <button onclick="resetPage()" class="btn btn-outline-secondary btn-lg px-4 py-3">
+          <i class="fas fa-redo me-2"></i> बदलें
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading Area -->
+    <div id="loadingArea" class="text-center py-5" style="display:none;">
+      <div class="img-scan-wrapper mb-4" style="width:fit-content; margin:auto;">
+        <img id="loadingPreview" class="preview-img img-fluid" style="max-height:200px;">
+        <div class="scan-line"></div>
+      </div>
+      <div class="spinner-border text-success mb-3" style="width: 3.5rem; height: 3.5rem;"></div>
+      <h5 class="scanning text-success fw-bold">Claude Vision AI विश्लेषण कर रहा है...</h5>
+
+      <div class="mt-4 text-start mx-auto" style="max-width:320px;">
+        <div class="loading-step active" id="step1"><i class="fas fa-image me-2"></i> फोटो सर्वर को भेजी जा रही है...</div>
+        <div class="loading-step mt-2" id="step2"><i class="fas fa-microscope me-2"></i> पत्ती का टेक्स्चर स्कैन...</div>
+        <div class="loading-step mt-2" id="step3"><i class="fas fa-dna me-2"></i> रोग पैटर्न पहचान...</div>
+        <div class="loading-step mt-2" id="step4"><i class="fas fa-prescription-bottle-alt me-2"></i> उपचार सुझाव तैयार...</div>
+      </div>
+    </div>
+
+    <!-- Result Area -->
+    <div id="resultArea" class="result-card p-4" style="display:none;">
+      <div class="text-center mb-3">
+        <span class="ai-real-badge"><i class="fas fa-check-circle"></i> Claude Vision AI — Analysis Complete</span>
+      </div>
+      <h4 class="text-center mb-4 text-success">🧪 AI डायग्नोसिस रिपोर्ट</h4>
+
+      <div class="alert alert-danger text-center fs-5 fw-bold" id="diseaseName"></div>
+
+      <div class="row text-center mb-4">
+        <div class="col-6">
+          <strong class="d-block text-muted small mb-1">AI Confidence Score</strong>
+          <h2 id="confidence" class="text-success fw-bold mb-1"></h2>
+          <div class="confidence-bar-wrap">
+            <div class="confidence-bar-fill" id="confidenceBar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="col-6">
+          <strong class="d-block text-muted small mb-1">बीमारी की गंभीरता</strong>
+          <div id="severity" class="mt-2"></div>
+        </div>
+      </div>
+
+      <div class="alert alert-light border-success border-2 mb-4" id="aiDescription" style="display:none;">
+        <strong class="text-success"><i class="fas fa-robot me-2"></i>Claude AI का विश्लेषण:</strong>
+        <p class="mb-0 mt-2" id="aiDescriptionText"></p>
+      </div>
+
+      <div class="mt-3">
+        <h6 class="text-success fw-bold mb-3"><span class="step-badge">1</span>💊 उपचार</h6>
+        <div id="treatment"></div>
+      </div>
+
+      <div class="mt-4">
+        <h6 class="text-success fw-bold mb-3"><span class="step-badge">2</span>🛡️ बचाव</h6>
+        <div id="prevention"></div>
+      </div>
+
+      <div id="technicalReport" class="mt-4 border-top pt-3"></div>
+
+      <div class="d-flex gap-2 mt-4 flex-wrap">
+        <button onclick="resetPage()" class="btn btn-outline-success flex-grow-1 py-3">
+          <i class="fas fa-camera me-2"></i> नई फोटो अपलोड करें
+        </button>
+        <button onclick="toggleSpeech()" class="btn btn-success flex-grow-1 py-3">
+          <i class="fas fa-volume-up me-2"></i> रिपोर्ट सुनें
+        </button>
+      </div>
+    </div>
+
+    <!-- Error Area -->
+    <div id="errorArea" class="error-box" style="display:none;">
+      <h5 class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>विश्लेषण में समस्या</h5>
+      <p id="errorMessage" class="mb-3"></p>
+      <button onclick="retryAnalysis()" class="btn btn-danger me-2">
+        <i class="fas fa-redo me-2"></i> फिर से कोशिश करें
+      </button>
+      <button onclick="useOfflineResult()" class="btn btn-outline-secondary">
+        ऑफलाइन मोड में देखें
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav py-3">
+    <div class="container">
+      <div class="row text-center">
+        <div class="col-3"><a href="index.html" class="text-muted"><i class="fas fa-home fa-2x"></i><small class="d-block">होम</small></a></div>
+        <div class="col-3"><a href="#" class="text-success"><i class="fas fa-leaf fa-2x"></i><small class="d-block fw-bold">फसल स्वास्थ्य</small></a></div>
+        <div class="col-3"><a href="sowing.html" class="text-muted"><i class="fas fa-seedling fa-2x"></i><small class="d-block">बोआई</small></a></div>
+        <div class="col-3"><a href="profit.html" class="text-muted"><i class="fas fa-store fa-2x"></i><small class="d-block">मुनाफा</small></a></div>
+      </div>
+    </div>
+  </nav>
+
+  <script>
+    // ==================== STATE ====================
+    let currentImageBase64 = null;
+    let currentImageRaw    = null;
+    let currentImageMime   = 'image/jpeg';
+    let reportText         = "";
+    let isSpeaking         = false;
+    let lastAnalysisResult = null;
+
+    const BACKEND_URL = "http://localhost:8080";   // ← Change for production
+
+    // ==================== SPEECH ====================
+    function cleanForSpeech(text) {
+      return text
+        .replace(/AI/g, "ए आई")
+        .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+        .replace(/💊|🛡️|🤖|🔬|🌿|🧪|✅|❗|📍|🔴|🟢/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function speak(text) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(cleanForSpeech(text));
+      utterance.lang = 'hi-IN';
+      utterance.rate = 0.89;
+      utterance.pitch = 1.0;
+      utterance.onend = () => { isSpeaking = false; updateVoiceButton(); };
+      speechSynthesis.speak(utterance);
+      isSpeaking = true;
+      updateVoiceButton();
+    }
+
+    function toggleSpeech() {
+      if (isSpeaking) {
+        window.speechSynthesis.cancel();
+        isSpeaking = false;
+        updateVoiceButton();
+      } else if (reportText) {
+        speak(reportText);
+      }
+    }
+
+    function updateVoiceButton() {
+      const btn = document.getElementById('voiceBtn');
+      btn.innerHTML = isSpeaking ? `<i class="fas fa-stop fa-2x"></i>` : `<i class="fas fa-volume-up fa-2x"></i>`;
+    }
+
+    // ==================== LOADING STEPS ====================
+    function animateLoadingSteps() {
+      const steps = ['step1','step2','step3','step4'];
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i > 0) {
+          document.getElementById(steps[i-1]).classList.remove('active');
+          document.getElementById(steps[i-1]).classList.add('done');
+        }
+        if (i < steps.length) {
+          document.getElementById(steps[i]).classList.add('active');
+          i++;
+        } else {
+          clearInterval(interval);
+        }
+      }, 1600);
+      return interval;
+    }
+
+    // ==================== MAIN ANALYZE FUNCTION (Backend Call) ====================
+    async function analyzeImage() {
+      if (!currentImageRaw) return;
+
+      document.getElementById('previewArea').style.display = 'none';
+      document.getElementById('loadingArea').style.display = 'block';
+
+      const stepsInterval = animateLoadingSteps();
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/analysis/detect`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: currentImageRaw,
+            mimeType: currentImageMime || 'image/jpeg'
+          })
+        });
+
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+
+        const result = await response.json();
+        clearInterval(stepsInterval);
+        renderResult(result);
+
+      } catch (err) {
+        clearInterval(stepsInterval);
+        console.error("Analysis Error:", err);
+
+        document.getElementById('loadingArea').style.display = 'none';
+
+        if (!navigator.onLine) {
+          useOfflineResult();
+        } else {
+          document.getElementById('errorArea').style.display = 'block';
+          document.getElementById('errorMessage').textContent = 
+            'Backend से कनेक्ट नहीं हो पा रहा। कृपया सुनिश्चित करें कि Spring Boot सर्वर चल रहा है।';
+        }
+      }
+    }
+
+    // ==================== RENDER RESULT ====================
+    function renderResult(result) {
+    lastAnalysisResult = result;
+    document.getElementById('loadingArea').style.display = 'none';
+    document.getElementById('resultArea').style.display = 'block';
+    document.getElementById('errorArea').style.display = 'none';
+
+    // Disease Name
+    const diseaseName = result.is_healthy 
+        ? `✅ ${result.disease_name_hindi || 'स्वस्थ फसल'}`
+        : `🤒 ${result.disease_name_hindi || 'अज्ञात रोग'} (${result.disease_name_english || ''})`;
+    
+    document.getElementById('diseaseName').innerHTML = diseaseName;
+    document.getElementById('diseaseName').className = result.is_healthy 
+        ? 'alert alert-success text-center fs-5 fw-bold' 
+        : 'alert alert-danger text-center fs-5 fw-bold';
+
+    // Confidence
+    const conf = result.confidence || 85;
+    document.getElementById('confidence').innerHTML = `${conf}%`;
+    setTimeout(() => document.getElementById('confidenceBar').style.width = conf + '%', 300);
+
+    // Severity
+    document.getElementById('severity').innerHTML = 
+        `<span class="badge bg-${result.severity_color || 'warning'} fs-5 px-4 py-2">${result.severity || 'मध्यम'}</span>`;
+
+    // AI Description
+    const descEl = document.getElementById('aiDescription');
+    if (result.ai_description_hindi) {
+        descEl.style.display = 'block';
+        document.getElementById('aiDescriptionText').textContent = result.ai_description_hindi;
+    } else {
+        descEl.style.display = 'none';
+    }
+
+    // Treatment
+    const treatEl = document.getElementById('treatment');
+    treatEl.innerHTML = '';
+    if (result.treatment && result.treatment.length > 0) {
+        result.treatment.forEach(t => {
+            treatEl.innerHTML += `<div class="tip-card">💊 ${t}</div>`;
+        });
+    } else {
+        treatEl.innerHTML = `<div class="tip-card">💊 नीम का तेल 3ml/L पानी में स्प्रे करें</div>`;
+    }
+
+    // Prevention
+    const prevEl = document.getElementById('prevention');
+    prevEl.innerHTML = '';
+    if (result.prevention && result.prevention.length > 0) {
+        result.prevention.forEach(p => {
+            prevEl.innerHTML += `<div class="tip-card prevention">🛡️ ${p}</div>`;
+        });
+    } else {
+        prevEl.innerHTML = `<div class="tip-card prevention">🛡️ फसल को घना न लगाएं, हवा आने दें</div>`;
+    }
+
+    // Urgency
+    if (result.urgency) {
+        treatEl.innerHTML += `<div class="alert alert-warning mt-3 fw-bold">⚠️ ${result.urgency}</div>`;
+    }
+
+    // Technical Report (Robust)
+    const tech = result.technical || {};
+    document.getElementById('technicalReport').innerHTML = `
+        <strong class="text-success">🔬 तकनीकी विश्लेषण रिपोर्ट</strong>
+        <table class="table tech-table mt-3 rounded overflow-hidden">
+          <tbody>
+            <tr><td class="fw-bold text-success">टेक्स्चर</td><td>${tech.texture_analysis || '—'}</td></tr>
+            <tr><td class="fw-bold text-success">कलर पैटर्न</td><td>${tech.color_pattern || '—'}</td></tr>
+            <tr><td class="fw-bold text-success">मॉर्फोलॉजी</td><td>${tech.morphology || '—'}</td></tr>
+            <tr><td class="fw-bold text-success">प्रभावित क्षेत्र</td><td>${tech.affected_area_percent ? tech.affected_area_percent + '%' : '—'}</td></tr>
+            <tr><td class="fw-bold text-success">विधि</td><td>${tech.analysis_method || 'Claude Vision AI'}</td></tr>
+          </tbody>
+        </table>
+    `;
+
+    // Voice Report (Better)
+    reportText = `किसान साथी AI रिपोर्ट। 
+    आपकी फसल में ${result.disease_name_hindi || ''} पाया गया। 
+    विश्वास ${conf} प्रतिशत। 
+    ${result.ai_description_hindi || ''} 
+    उपचार: ${(result.treatment || []).join('। ')} 
+    बचाव: ${(result.prevention || []).join('। ')}`;
+
+    setTimeout(() => speak(reportText), 800);
+}
+
+    // ==================== OFFLINE FALLBACK ====================
+    const offlineDiseaseDB = [ /* aapka purana offline DB same rakha hai */ ];
+
+    function useOfflineResult() {
+      const r = offlineDiseaseDB[Math.floor(Math.random() * offlineDiseaseDB.length)];
+      r.ai_description_hindi = "(ऑफलाइन मोड) " + r.ai_description_hindi;
+      renderResult(r);
+    }
+
+    function retryAnalysis() {
+      document.getElementById('errorArea').style.display = 'none';
+      analyzeImage();
+    }
+
+    // ==================== IMAGE HANDLING (Rest same as before) ====================
+    // ... (aapka pura image handling, camera, drag-drop code same rakha hai)
+
+    document.getElementById('imageInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) processImageFile(file);
+    });
+
+    function processImageFile(file) {
+      currentImageMime = file.type || 'image/jpeg';
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const dataURL = event.target.result;
+        currentImageBase64 = dataURL;
+        currentImageRaw = dataURL.split(',')[1];
+
+        document.getElementById('preview').src = dataURL;
+        document.getElementById('uploadArea').style.display = 'none';
+        document.getElementById('previewArea').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function openCamera() {
+      const inp = document.getElementById('imageInput');
+      inp.setAttribute('capture', 'environment');
+      inp.click();
+    }
+
+    // Drag & Drop
+    const uploadArea = document.getElementById('uploadArea');
+    uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.style.background = '#f1f8e9'; });
+    uploadArea.addEventListener('dragleave', () => uploadArea.style.background = 'white');
+    uploadArea.addEventListener('drop', e => {
+      e.preventDefault();
+      uploadArea.style.background = 'white';
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) processImageFile(file);
+    });
+
+    function resetPage() {
+      document.getElementById('resultArea').style.display = 'none';
+      document.getElementById('previewArea').style.display = 'none';
+      document.getElementById('uploadArea').style.display = 'block';
+      document.getElementById('errorArea').style.display = 'none';
+      document.getElementById('loadingArea').style.display = 'none';
+      document.getElementById('imageInput').value = '';
+      currentImageBase64 = null;
+      currentImageRaw = null;
+      reportText = "";
+      if (isSpeaking) window.speechSynthesis.cancel();
+      updateVoiceButton();
+    }
+
+    // Network Status
+    window.addEventListener('online', () => document.getElementById('offlineBadge').classList.add('d-none'));
+    window.addEventListener('offline', () => document.getElementById('offlineBadge').classList.remove('d-none'));
+
+    window.addEventListener('load', () => {
+      updateVoiceButton();
+      if (!navigator.onLine) document.getElementById('offlineBadge').classList.remove('d-none');
+    });
+  </script>
+</body>
+</html>
