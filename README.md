@@ -11,6 +11,8 @@ Kisan Saathi is an AI-powered agricultural advisory platform designed to help fa
 - MySQL Database Integration
 - Secure Backend Architecture
 - Multilingual Support
+- Localized Hindi & English Voice Assistant for rural accessibility
+- Real-time speech recognition and voice-command processing using Web Speech API
 
 ## Tech Stack
 
@@ -23,6 +25,7 @@ Kisan Saathi is an AI-powered agricultural advisory platform designed to help fa
 - HTML
 - CSS
 - JavaScript
+-  Web Speech API (Voice Engine)
 
 ## Project Structure
 
